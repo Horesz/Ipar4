@@ -32,7 +32,6 @@ images = ["accessories/hat.png", "accessories/sunglasses.png",
 for img_path in images:
     test_image(img_path)
 
-# Helyezzük át a képeket, ha nem a megfelelő helyen vannak
 if not os.path.exists("accessories"):
     os.makedirs("accessories")
     print("'accessories' mappa létrehozva.")

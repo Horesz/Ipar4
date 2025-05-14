@@ -9,60 +9,60 @@ class VirtualAccessoryApp:
         self.cap = cv2.VideoCapture(0)
         self.face_detector = FaceDetector()
         
-        # Kamera felbontás beállítása nagyobbra
+        # Set camera resolution to higher quality
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         
-        # Kiegészítő kategóriák és elemek
+        # Accessory categories and items
         self.categories = {
-            "fejfedok": ["hat", "cap", "crown", "santa_hat"],
-            "szemuvegek": ["sunglasses", "nerd_glasses", "party_glasses"],
-            "arcszorszet": ["mustache1", "beard", "goatee"]
+            "headwear": ["hat", "cap", "crown", "santa_hat"],
+            "glasses": ["sunglasses", "nerd_glasses", "party_glasses"],
+            "facial_hair": ["mustache1", "beard", "goatee"]
         }
         
-        # Aktív kategória és kiegészítők
-        self.active_category = "fejfedok"
+        # Active category and accessories
+        self.active_category = "headwear"
         self.active_accessories = {}
         
-        # Testreszabási beállítások
+        # Customization settings
         self.customization = {
             "size_factor": {},
             "position_offset": {}
         }
         
-        # Aktuális képhatás
+        # Current image filter
         self.available_filters = ["none", "grayscale", "sepia", "cartoon", "negative"]
         self.current_filter = "none"
         
-        # Debug mód
+        # Debug mode
         self.debug_mode = False
         
-        # Kiegészítők betöltése
+        # Load accessories
         self.accessories = self.load_accessories()
         
-        # Kiválasztott kiegészítő
+        # Selected accessory
         self.selected_accessory = None
         
-        # Kategória elemek indexei a kiválasztáshoz
-        self.category_selected_index = {"fejfedok": 0, "szemuvegek": 0, "arcszorszet": 0}
+        # Category item indexes for selection
+        self.category_selected_index = {"headwear": 0, "glasses": 0, "facial_hair": 0}
         
-        # Alapbeállítások minden kiegészítőhöz
+        # Default settings for all accessories
         for acc in self.accessories:
             self.customization["size_factor"][acc] = 1.0
             self.customization["position_offset"][acc] = (0, 0)
         
-        # Alapértelmezett kiegészítő
+        # Default accessory
         if "hat" in self.accessories:
             self.active_accessories["hat"] = True
             self.selected_accessory = "hat"
     
     def load_accessories(self):
-        """Kiegészítők betöltése"""
+        """Load accessories"""
         accessories = {}
         
-        print("Kiegészítők betöltése...")
+        print("Loading accessories...")
         
-        # Accessories mappából minden png betöltése
+        # Load all PNGs from accessories folder
         if os.path.exists("accessories"):
             png_files = [f for f in os.listdir("accessories") if f.endswith(".png")]
             for png_file in png_files:
@@ -70,26 +70,26 @@ class VirtualAccessoryApp:
                 path = os.path.join("accessories", png_file)
                 image = cv2.imread(path, cv2.IMREAD_UNCHANGED)
                 if image is not None:
-                    print(f"  {name} betöltve: {path}")
+                    print(f"  {name} loaded: {path}")
                     accessories[name] = image
         
-        # Alapkiegészítők generálása, ha hiányoznak
+        # Generate default accessories if none exist
         if len(accessories) == 0:
-            print("Alapkiegészítők generálása...")
+            print("Generating default accessories...")
             
-            # Kalap
+            # Hat
             hat = np.zeros((150, 200, 4), dtype=np.uint8)
             cv2.ellipse(hat, (100, 100), (80, 40), 0, 0, 360, (42, 42, 165, 255), -1)
             cv2.ellipse(hat, (100, 70), (50, 40), 0, 0, 180, (42, 85, 165, 255), -1)
             accessories["hat"] = hat
             
-            # Napszemüveg
+            # Sunglasses
             sunglasses = np.zeros((100, 200, 4), dtype=np.uint8)
             cv2.rectangle(sunglasses, (10, 10), (90, 40), (0, 0, 0, 255), -1)
             cv2.rectangle(sunglasses, (110, 10), (190, 40), (0, 0, 0, 255), -1)
             accessories["sunglasses"] = sunglasses
             
-            # Bajusz
+            # Mustache
             mustache = np.zeros((60, 120, 4), dtype=np.uint8)
             cv2.ellipse(mustache, (60, 30), (50, 20), 0, 0, 180, (0, 0, 0, 255), -1)
             accessories["mustache1"] = mustache
@@ -97,37 +97,37 @@ class VirtualAccessoryApp:
         return accessories
     
     def process_frame(self, frame):
-        """Képkocka feldolgozása"""
-        # Arc detektálása
+        """Process the current frame"""
+        # Detect face
         face_landmarks = self.face_detector.detect_face(frame)
         face_regions = self.face_detector.get_face_regions(face_landmarks)
         
-        # Képhatás alkalmazása
+        # Apply filter
         processed_frame = self.apply_filter(frame.copy(), self.current_filter)
         
-        # Kiegészítők ráhelyezése
+        # Add accessories
         if face_regions:
             for accessory_name, is_active in self.active_accessories.items():
                 if is_active and accessory_name in self.accessories:
                     processed_frame = self.overlay_accessory(processed_frame, accessory_name, face_regions)
         
-        # Debug információk
+        # Debug information
         if self.debug_mode and face_landmarks:
             for face in face_landmarks:
                 x, y, x2, y2 = face['rect']
                 cv2.rectangle(processed_frame, (x, y), (x2, y2), (0, 255, 0), 2)
         
-        # UI elemek hozzáadása
+        # Add UI elements
         processed_frame = self.add_ui_elements(processed_frame)
         
         return processed_frame, face_landmarks
     
     def add_ui_elements(self, frame):
-        """UI elemek hozzáadása a képhez"""
-        # Felső sáv
+        """Add UI elements to the frame"""
+        # Top bar
         cv2.rectangle(frame, (0, 0), (frame.shape[1], 40), (50, 50, 50), -1)
         
-        # Kategória gombok
+        # Category buttons
         button_width = 120
         x_pos = 10
         for category in self.categories:
@@ -140,21 +140,21 @@ class VirtualAccessoryApp:
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
             x_pos += button_width + 10
         
-        # Szűrő kijelzése
-        filter_text = f"Szűrő: {self.current_filter}"
+        # Filter display
+        filter_text = f"Filter: {self.current_filter}"
         cv2.putText(frame, filter_text, (frame.shape[1] - 200, 25), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
         
-        # Aktív kiegészítők kijelzése
-        active_text = "Aktív: " + ", ".join([acc for acc, active in self.active_accessories.items() if active])
+        # Active accessories display
+        active_text = "Active: " + ", ".join([acc for acc, active in self.active_accessories.items() if active])
         cv2.putText(frame, active_text, (10, frame.shape[0] - 10), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
-        # Kategória kiegészítők listája
+        # Category items list
         y_pos = 50
         for i, item in enumerate(self.categories[self.active_category]):
             if item in self.accessories:
-                # Kiválasztott elem megjelenítése másképp
+                # Display selected item differently
                 is_selected = (i == self.category_selected_index[self.active_category])
                 is_active = self.active_accessories.get(item, False)
                 
@@ -170,13 +170,13 @@ class VirtualAccessoryApp:
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
                 y_pos += 40
         
-        # Vezérlők
+        # Controls
         if self.selected_accessory:
             ctrl_x = frame.shape[1] - 200
             ctrl_y = 60
             
-            # Méretezés vezérlők
-            cv2.putText(frame, f"Méret: {self.selected_accessory}", (ctrl_x, ctrl_y), 
+            # Size controls
+            cv2.putText(frame, f"Size: {self.selected_accessory}", (ctrl_x, ctrl_y), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             cv2.rectangle(frame, (ctrl_x, ctrl_y + 10), (ctrl_x + 30, ctrl_y + 30), (0, 100, 200), -1)
             cv2.putText(frame, "-", (ctrl_x + 10, ctrl_y + 25), 
@@ -185,39 +185,39 @@ class VirtualAccessoryApp:
             cv2.putText(frame, "+", (ctrl_x + 50, ctrl_y + 25), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
             
-            # Pozícionálás vezérlők
+            # Position controls
             ctrl_y += 40
-            cv2.putText(frame, "Pozíció:", (ctrl_x, ctrl_y), 
+            cv2.putText(frame, "Position:", (ctrl_x, ctrl_y), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             
-            # Nyilak
+            # Arrows
             arrow_y = ctrl_y + 20
-            # Fel
+            # Up
             cv2.rectangle(frame, (ctrl_x + 35, arrow_y), (ctrl_x + 65, arrow_y + 30), (150, 150, 200), -1)
             cv2.putText(frame, "↑", (ctrl_x + 45, arrow_y + 20), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            # Bal
+            # Left
             arrow_y += 35
             cv2.rectangle(frame, (ctrl_x, arrow_y), (ctrl_x + 30, arrow_y + 30), (150, 150, 200), -1)
             cv2.putText(frame, "←", (ctrl_x + 10, arrow_y + 20), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            # Le
+            # Down
             cv2.rectangle(frame, (ctrl_x + 35, arrow_y), (ctrl_x + 65, arrow_y + 30), (150, 150, 200), -1)
             cv2.putText(frame, "↓", (ctrl_x + 45, arrow_y + 20), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            # Jobb
+            # Right
             cv2.rectangle(frame, (ctrl_x + 70, arrow_y), (ctrl_x + 100, arrow_y + 30), (150, 150, 200), -1)
             cv2.putText(frame, "→", (ctrl_x + 80, arrow_y + 20), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
         
-        # Billentyűzet-kiosztás segítség
+        # Keyboard layout help
         self.add_keyboard_help(frame)
         
         return frame
     
     def add_keyboard_help(self, frame):
-        """Billentyűzet-kiosztás segítség megjelenítése"""
-        # Háttér a jobb oldalon
+        """Display keyboard help"""
+        # Background on the right side
         help_width = 220
         help_start_x = frame.shape[1] - help_width - 10
         help_start_y = 250
@@ -227,22 +227,22 @@ class VirtualAccessoryApp:
                      (frame.shape[1] - 10, help_end_y), 
                      (50, 50, 50, 150), -1)
         
-        # Cím
-        cv2.putText(frame, "Billentyű segítség:", 
+        # Title
+        cv2.putText(frame, "Keyboard Help:", 
                    (help_start_x + 10, help_start_y + 25), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
-        # Billentyű-parancsok
+        # Keyboard commands
         commands = [
-            "1,2,3: Kategória váltás",
-            "Fel/Le: Elem kiválasztás",
-            "Space: Elem be/kikapcsolás",
-            "5: Szűrő váltás",
-            "+/-: Méretezés",
-            "W,A,S,D: Mozgatás",
-            "P: Kép mentése",
-            "V: Debug mód",
-            "ESC: Kilépés"
+            "1,2,3: Change category",
+            "I,K: Select item up/down",
+            "Space: Toggle item on/off",
+            "5: Change filter",
+            "+/-: Resize",
+            "W,A,S,D: Move item",
+            "P: Save screenshot",
+            "V: Debug mode",
+            "ESC: Exit"
         ]
         
         for i, cmd in enumerate(commands):
@@ -253,7 +253,7 @@ class VirtualAccessoryApp:
         return frame
     
     def apply_filter(self, frame, filter_name):
-        """Képhatás alkalmazása"""
+        """Apply image filter"""
         if filter_name == "none":
             return frame
         
@@ -285,13 +285,13 @@ class VirtualAccessoryApp:
         return frame
     
     def overlay_accessory(self, frame, accessory_name, face_regions):
-        """Kiegészítő ráhelyezése a képre"""
+        """Place accessory on the frame"""
         if accessory_name not in self.accessories or not face_regions:
             return frame
         
         accessory = self.accessories[accessory_name]
         
-        # Arcadatok kinyerése
+        # Extract face data
         face_rect = face_regions.get('face_rect')
         if not face_rect:
             return frame
@@ -300,13 +300,13 @@ class VirtualAccessoryApp:
         face_width = x2 - x
         face_height = y2 - y
         
-        # Testreszabási paraméterek kinyerése
+        # Get customization parameters
         size_factor = self.customization["size_factor"].get(accessory_name, 1.0)
         position_offset = self.customization["position_offset"].get(accessory_name, (0, 0))
         
-        # Kiegészítő elhelyezése a kategória szerint
+        # Place accessory based on category
         if accessory_name in ["hat", "crown", "santa_hat", "cap"]:
-            # Fejfedők
+            # Headwear
             base_scale = face_width / accessory.shape[1] * 1.2 * size_factor
             width = int(accessory.shape[1] * base_scale)
             height = int(accessory.shape[0] * base_scale)
@@ -317,7 +317,7 @@ class VirtualAccessoryApp:
             self.place_accessory(frame, accessory, pos_x, pos_y, width, height)
             
         elif accessory_name in ["sunglasses", "nerd_glasses", "party_glasses"]:
-            # Szemüvegek
+            # Glasses
             if not face_regions.get('left_eye') or not face_regions.get('right_eye'):
                 return frame
                 
@@ -339,7 +339,7 @@ class VirtualAccessoryApp:
             self.place_accessory(frame, accessory, pos_x, pos_y, width, height)
             
         elif accessory_name in ["mustache1", "beard", "goatee"]:
-            # Arcszőrzet
+            # Facial hair
             if not face_regions.get('nose') or not face_regions.get('mouth'):
                 return frame
                 
@@ -350,7 +350,7 @@ class VirtualAccessoryApp:
             width = int(accessory.shape[1] * base_scale)
             height = int(accessory.shape[0] * base_scale)
             
-            # Pozicionálás
+            # Positioning
             if accessory_name == "mustache1":
                 pos_y = int((nose[1] + mouth[1]) / 2) - height // 2
             else:
@@ -364,41 +364,41 @@ class VirtualAccessoryApp:
         return frame
     
     def place_accessory(self, frame, accessory, x, y, width, height):
-        """Kiegészítő ráhelyezése a képre"""
+        """Place accessory on the frame"""
         try:
-            # Átméretezés
+            # Resize
             resized = cv2.resize(accessory, (width, height))
             
-            # Biztosítsuk, hogy a pozíciók a képen belül vannak
+            # Ensure positions are within the frame
             if x < 0 or y < 0 or x + width > frame.shape[1] or y + height > frame.shape[0]:
-                # Kiszámítjuk a látható részt
+                # Calculate visible part
                 x_visible_start = max(0, x)
                 y_visible_start = max(0, y)
                 x_visible_end = min(frame.shape[1], x + width)
                 y_visible_end = min(frame.shape[0], y + height)
                 
-                # Kiszámítjuk a megfelelő indexeket az átméretezett kiegészítőben
+                # Calculate corresponding indices in resized accessory
                 x_offset_in_accessory = x_visible_start - x
                 y_offset_in_accessory = y_visible_start - y
                 width_to_use = x_visible_end - x_visible_start
                 height_to_use = y_visible_end - y_visible_start
                 
                 if width_to_use <= 0 or height_to_use <= 0:
-                    return  # Nincs látható rész
+                    return  # No visible part
                 
-                # Kivágjuk csak a látható részt az átméretezett kiegészítőből
+                # Crop only the visible part from the resized accessory
                 cropped_accessory = resized[
                     y_offset_in_accessory:y_offset_in_accessory + height_to_use,
                     x_offset_in_accessory:x_offset_in_accessory + width_to_use
                 ]
                 
-                # Kivágjuk a megfelelő részt a képből
+                # Extract corresponding region from the frame
                 roi = frame[
                     y_visible_start:y_visible_end,
                     x_visible_start:x_visible_end
                 ]
                 
-                # Alkalmazzuk az átlátszóságot
+                # Apply transparency
                 if cropped_accessory.shape[2] == 4:
                     alpha = cropped_accessory[:, :, 3] / 255.0
                     alpha = np.expand_dims(alpha, axis=2)
@@ -406,10 +406,10 @@ class VirtualAccessoryApp:
                     result = (1.0 - alpha) * roi + alpha * cropped_accessory[:, :, :3]
                     frame[y_visible_start:y_visible_end, x_visible_start:x_visible_end] = result.astype(np.uint8)
             else:
-                # A kiegészítő teljesen a képen belül van
+                # Accessory is completely within the frame
                 roi = frame[y:y+height, x:x+width]
                 
-                # Alkalmazzuk az átlátszóságot
+                # Apply transparency
                 if resized.shape[2] == 4:
                     alpha = resized[:, :, 3] / 255.0
                     alpha = np.expand_dims(alpha, axis=2)
@@ -418,10 +418,10 @@ class VirtualAccessoryApp:
                     frame[y:y+height, x:x+width] = result.astype(np.uint8)
         
         except Exception as e:
-            print(f"Hiba a kiegészítő elhelyezése során: {e}")
+            print(f"Error placing accessory: {e}")
     
     def select_current_accessory(self):
-        """Kiválasztja és aktiválja/deaktiválja az aktuálisan kiválasztott kiegészítőt"""
+        """Select and toggle the currently selected accessory"""
         if not self.categories[self.active_category]:
             return
             
@@ -433,116 +433,116 @@ class VirtualAccessoryApp:
                 if self.active_accessories[item]:
                     self.selected_accessory = item
                 else:
-                    # Ha kikapcsoltuk, akkor keressünk egy másik aktív kiegészítőt
+                    # If turned off, find another active accessory
                     self.selected_accessory = next(
                         (acc for acc, active in self.active_accessories.items() if active), 
                         None
                     )
     
     def run(self):
-        """Alkalmazás futtatása"""
-        print("Kamera inicializálása...")
+        """Run the application"""
+        print("Initializing camera...")
         if not self.cap.isOpened():
-            print("HIBA: A kamera nem nyitható meg!")
+            print("ERROR: Cannot open camera!")
             return
         
-        # Ablak létrehozása és átméretezése
-        cv2.namedWindow("Virtualis Probara Probalo Pro", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Virtualis Probara Probalo Pro", 1280, 720)
+        # Create window and resize
+        cv2.namedWindow("Virtual Try-On Pro", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Virtual Try-On Pro", 1280, 720)
         
         while True:
-            # Kamera kép olvasása
+            # Read camera frame
             ret, frame = self.cap.read()
             if not ret:
-                print("HIBA: Nem sikerült képkockát olvasni a kamerából!")
+                print("ERROR: Failed to read frame from camera!")
                 break
             
-            # Tükrözés
+            # Mirror image
             frame = cv2.flip(frame, 1)
             
-            # Kép feldolgozása közvetlenül itt, threading nélkül
+            # Process frame directly here, without threading
             processed_frame, _ = self.process_frame(frame)
             
-            # Feldolgozott kép megjelenítése
-            cv2.imshow("Virtualis Probara Probalo Pro", processed_frame)
+            # Display the processed frame
+            cv2.imshow("Virtual Try-On Pro", processed_frame)
             
-            # Billentyű kezelése
+            # Handle keyboard input
             key = cv2.waitKey(1)
             if key == 27:  # ESC
                 break
             elif key == ord('1'):
-                # Kategória váltás fejfedőkre
-                self.active_category = "fejfedok"
+                # Switch to headwear category
+                self.active_category = "headwear"
             elif key == ord('2'):
-                # Kategória váltás szemüvegekre
-                self.active_category = "szemuvegek"
+                # Switch to glasses category
+                self.active_category = "glasses"
             elif key == ord('3'):
-                # Kategória váltás arcszőrzetre
-                self.active_category = "arcszorszet"
+                # Switch to facial hair category
+                self.active_category = "facial_hair"
             elif key == ord(' '):
-                # Aktuálisan kiválasztott elem be/kikapcsolása
+                # Toggle currently selected item on/off
                 self.select_current_accessory()
             elif key == ord('5'):
-                # Szűrő váltás
+                # Cycle through filters
                 idx = (self.available_filters.index(self.current_filter) + 1) % len(self.available_filters)
                 self.current_filter = self.available_filters[idx]
             elif key == ord('+') or key == ord('='):
-                # Méret növelése
+                # Increase size
                 if self.selected_accessory:
                     current_size = self.customization["size_factor"].get(self.selected_accessory, 1.0)
                     self.customization["size_factor"][self.selected_accessory] = min(2.0, current_size + 0.1)
             elif key == ord('-'):
-                # Méret csökkentése
+                # Decrease size
                 if self.selected_accessory:
                     current_size = self.customization["size_factor"].get(self.selected_accessory, 1.0)
                     self.customization["size_factor"][self.selected_accessory] = max(0.5, current_size - 0.1)
             elif key == ord('w'):
-                # Fel mozgatás
+                # Move up
                 if self.selected_accessory:
                     current_offset = self.customization["position_offset"].get(self.selected_accessory, (0, 0))
                     self.customization["position_offset"][self.selected_accessory] = (
                         current_offset[0], current_offset[1] - 5
                     )
             elif key == ord('s'):
-                # Le mozgatás
+                # Move down
                 if self.selected_accessory:
                     current_offset = self.customization["position_offset"].get(self.selected_accessory, (0, 0))
                     self.customization["position_offset"][self.selected_accessory] = (
                         current_offset[0], current_offset[1] + 5
                     )
             elif key == ord('a'):
-                # Balra mozgatás
+                # Move left
                 if self.selected_accessory:
                     current_offset = self.customization["position_offset"].get(self.selected_accessory, (0, 0))
                     self.customization["position_offset"][self.selected_accessory] = (
                         current_offset[0] - 5, current_offset[1]
                     )
             elif key == ord('d'):
-                # Jobbra mozgatás
+                # Move right
                 if self.selected_accessory:
                     current_offset = self.customization["position_offset"].get(self.selected_accessory, (0, 0))
                     self.customization["position_offset"][self.selected_accessory] = (
                         current_offset[0] + 5, current_offset[1]
                     )
             elif key == ord('v'):
-                # Debug mód be/kikapcsolása
+                # Toggle debug mode
                 self.debug_mode = not self.debug_mode
             elif key == ord('p'):
-                # Kép mentése
+                # Save screenshot
                 timestamp = time.strftime("%Y%m%d-%H%M%S")
                 filename = f"selfie_{timestamp}.jpg"
                 cv2.imwrite(filename, processed_frame)
-                print(f"Kép mentve: {filename}")
-            elif key == 82:  # Fel nyíl
-                # Előző elem kiválasztása
+                print(f"Image saved: {filename}")
+            elif key == ord('i'):  # Use 'i' for up (was arrow up)
+                # Select previous item
                 index = self.category_selected_index[self.active_category]
                 if index > 0:
                     self.category_selected_index[self.active_category] = index - 1
                     item = self.categories[self.active_category][self.category_selected_index[self.active_category]]
                     if item in self.accessories and self.active_accessories.get(item, False):
                         self.selected_accessory = item
-            elif key == 84:  # Le nyíl
-                # Következő elem kiválasztása
+            elif key == ord('k'):  # Use 'k' for down (was arrow down)
+                # Select next item
                 index = self.category_selected_index[self.active_category]
                 if index < len(self.categories[self.active_category]) - 1:
                     self.category_selected_index[self.active_category] = index + 1
@@ -550,10 +550,10 @@ class VirtualAccessoryApp:
                     if item in self.accessories and self.active_accessories.get(item, False):
                         self.selected_accessory = item
         
-        # Kamera és erőforrások felszabadítása
+        # Release camera and cleanup
         self.cap.release()
         cv2.destroyAllWindows()
-        print("Alkalmazás leállítva.")
+        print("Application closed.")
 
 if __name__ == "__main__":
     app = VirtualAccessoryApp()

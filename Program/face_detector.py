@@ -22,7 +22,6 @@ class FaceDetector:
             roi_color = frame[y:y+h, x:x+w]
             eyes = self.eye_cascade.detectMultiScale(roi_gray, 1.1, 4, minSize=(30, 30))
             
-            # Egyszerűsített arcjellemzők létrehozása
             # Szemek
             eye_points = []
             for (ex, ey, ew, eh) in eyes[:2]:  # Maximum 2 szem
@@ -43,7 +42,7 @@ class FaceDetector:
             # Arckerethez szorosan illeszkedő téglalap
             face_rect = (x, y, x+w, y+h)
             
-            # Száj pozíciójának becslése (az arc alsó harmada)
+            # Száj pozíciójának becslése (az arc alsó része)
             mouth_y = y + int(h * 0.75)
             mouth_points = [(x + w//4, mouth_y), (x + w//2, mouth_y), (x + 3*w//4, mouth_y)]
             
