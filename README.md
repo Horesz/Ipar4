@@ -2,7 +2,7 @@
 
 Virtual Try-On Pro is an interactive augmented reality application that allows users to try on virtual accessories in real-time using computer vision technology.
 
-![Virtual Try-On Demo](https://i.imgur.com/placeholder.jpg)
+![Virtual Try-On Demo](https://imgur.com/a/2KIOPRi)
 
 ## 🌟 Features
 
